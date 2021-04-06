@@ -6,14 +6,14 @@ Location: ProjectName/
 Script only generates content. File it self is included in the xcode project in another hook: xcodePreferences.js.
 */
 
-var path = require('path');
-var fs = require('fs');
-var plist = require('plist');
-var mkpath = require('mkpath');
+var path = require("path");
+var fs = require("fs");
+var plist = require("plist");
+var mkpath = require("mkpath");
 var context;
 
 module.exports = {
-  generateAssociatedDomainsEntitlements: generateEntitlements
+  generateAssociatedDomainsEntitlements: generateEntitlements,
 };
 
 // region Public API
@@ -25,50 +25,55 @@ module.exports = {
  * @param {Object} pluginPreferences - plugin preferences from config.xml; already parsed
  */
 function generateEntitlements(context, pluginPreferences) {
-    var iosPlatform = path.join(context.opts.projectRoot, 'platforms/ios/');
-    var iosFolder = fs.existsSync(iosPlatform) ? iosPlatform : context.opts.projectRoot;
+  var iosPlatform = path.join(context.opts.projectRoot, "platforms/ios/");
+  var iosFolder = fs.existsSync(iosPlatform)
+    ? iosPlatform
+    : context.opts.projectRoot;
 
-    var data = fs.readdirSync(iosFolder);
-    var projFolder = null;
-    var projName = null;
-    if (data && data.length) {
-        data.forEach(function (folder) {
-            if (folder.match(/\.xcodeproj$/)) {
-                projName = path.basename(folder, '.xcodeproj');
-                projFolder = path.join(iosFolder, projName);
-            }
-        });
-    }
+  var data = fs.readdirSync(iosFolder);
+  var projFolder = null;
+  var projName = null;
+  if (data && data.length) {
+    data.forEach(function (folder) {
+      if (folder.match(/\.xcodeproj$/)) {
+        projName = path.basename(folder, ".xcodeproj");
+        projFolder = path.join(iosFolder, projName);
+      }
+    });
+  }
 
-    if (!projFolder || !projName) {
-        throw new Error("Could not find an .xcodeproj folder in: " + iosFolder);
-    }
+  if (!projFolder || !projName) {
+    throw new Error("Could not find an .xcodeproj folder in: " + iosFolder);
+  }
 
-    if (directoryExists(iosFolder)) {
-      ['Debug', 'Release'].forEach(function(target) {
-          var pathToFile = path.join(projFolder, 'Entitlements-' + target + '.plist');
-          var entitlements;
+  if (directoryExists(iosFolder)) {
+    ["Debug", "Release"].forEach(function (target) {
+      var pathToFile = path.join(
+        projFolder,
+        "Entitlements-" + target + ".plist"
+      );
+      var entitlements;
 
-          try {
-              entitlements = plist.parse(fs.readFileSync(pathToFile, 'utf8'));
-          } catch (err) {
-              entitlements = {};
-          }
+      try {
+        entitlements = plist.parse(fs.readFileSync(pathToFile, "utf8"));
+      } catch (err) {
+        entitlements = {};
+      }
 
-          var domainsList = [];
-          pluginPreferences.hosts.forEach(function(host) {
-              var link = 'applinks:' + host.name;
-              if (domainsList.indexOf(link) === -1) {
-                  domainsList.push(link);
-              }
-          });
-
-          entitlements['com.apple.developer.associated-domains'] = domainsList;
-
-          // save it's content
-          fs.writeFileSync(pathToFile, plist.build(entitlements), 'utf8');
+      var domainsList = [];
+      pluginPreferences.hosts.forEach(function (host) {
+        var link = "applinks:" + host.name;
+        if (domainsList.indexOf(link) === -1) {
+          domainsList.push(link);
+        }
       });
-    }
+
+      entitlements["com.apple.developer.associated-domains"] = domainsList;
+
+      // save it's content
+      fs.writeFileSync(pathToFile, plist.build(entitlements), "utf8");
+    });
+  }
 }
 
 // endregion
@@ -76,12 +81,12 @@ function generateEntitlements(context, pluginPreferences) {
 // region Path helper methods
 
 function directoryExists(path) {
-    try  {
-        return fs.statSync(path).isDirectory();
-    } catch (e) {
-        logMe("directoryExists error: " + e);
-        return false;
-    }
+  try {
+    return fs.statSync(path).isDirectory();
+  } catch (e) {
+    logMe("directoryExists error: " + e);
+    return false;
+  }
 }
 
 // endregion
